@@ -113,17 +113,17 @@ void send_data()
         fgets(message, 240, stdin); message[strlen(message)-1]='\0';
         if(strcmp(message, "/quit")==0)
         {
-            char path[40];
+			char path[40];
             bzero(path, 40); strcat(path, "users/"); strcat(path, name); strcat(path, "_unread.txt");
             FILE *unreadfile=fopen(path, "w"); //empty file when closing app
             fclose(unreadfile);
-            exit(0);
-        }
+			exit(0);
+		}
         else if(strncmp(message, "/register", 9)==0 || strncmp(message, "/login", 6)==0)
             printf("You are already logged in. If you want to create an account or log into a different one, you must first log out.\n");
         else
         {
-            if(strcmp(message, "/help")==0 || strcmp(message, "/view")==0 || strncmp(message, "/to ", 4)==0 ||
+            if(strncmp(message, "/help", 5)==0 || strncmp(message, "/view", 5)==0 || strncmp(message, "/to ", 4)==0 ||
             strncmp(message, "/reply ", 7)==0 || strncmp(message, "/history", 8)==0 ||
             strncmp(message, "/chat-history", 13)==0 || strncmp(message, "/online-users", 13)==0) //commands
                 sprintf(buffer, "%s", message);
