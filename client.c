@@ -19,10 +19,10 @@ int main()
         bzero(initial, 52); fgets(initial, 52, stdin); initial[strlen(initial)-1]='\0';
         command=strtok(initial, " ");
         username=strtok(NULL, "/");
-        password=strtok(NULL, " ");
+        password=strtok(NULL, "");
 
         if(strcmp(command, "/register")!=0 && strcmp(command, "/login")!=0 && strcmp(command, "/quit")!=0)
-             printf("Unknown command.\n");
+            printf("Unknown command.\n");
         else if(strcmp(command, "/quit")==0)
             exit(0);
         else if(username==NULL || password==NULL)
@@ -84,7 +84,7 @@ int main()
 
     if(pthread_create(&send_thread, NULL, (void *)send_data, NULL)!=0)
     {
-    		printf("Error creating thread.\n");
+    	printf("Error creating thread.\n");
         return errno;
   	}
 
@@ -111,7 +111,6 @@ void send_data()
     while(1)
     {
         fgets(message, 240, stdin); message[strlen(message)-1]='\0';
-
         if(strcmp(message, "/quit")==0)
         {
             char path[40];
@@ -137,7 +136,7 @@ void send_data()
                 exit(0);
             }
         }
-    		bzero(message, 240); bzero(buffer, 260);
+    	bzero(message, 240); bzero(buffer, 260);
     }
 }
 
@@ -151,7 +150,7 @@ void recv_data()
 
     while(1)
     {
-    		int length=recv(sd, message, 1000, 0);
+    	int length=recv(sd, message, 1000, 0);
         if(length==-1)
         {
             perror("Error reading from server.\n");
@@ -163,6 +162,6 @@ void recv_data()
         {
             printf("%s", message); fflush(stdout);
         }
-    		bzero(message, 1000);
+    	bzero(message, 1000);
     }
 }

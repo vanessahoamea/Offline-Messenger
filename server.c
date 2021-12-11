@@ -3,8 +3,8 @@
 typedef struct
 {
     char username[16];
-  	int fd;
-  	int uid;
+    int fd;
+    int uid;
 } Client;
 
 Client *clients[10];
@@ -47,50 +47,50 @@ int main()
         return errno;
     }
 
-  	while(1)
+    while(1)
     {
-    		int client=accept(sd, NULL, NULL);
+        int client=accept(sd, NULL, NULL);
 
-    		Client *cli=(Client *)malloc(sizeof(Client));
-    		cli->fd=client;
+        Client *cli=(Client *)malloc(sizeof(Client));
+        cli->fd=client;
 
-    		add_client(cli);
-    		pthread_create(&tid, NULL, &handle_client, (void*)cli);
+        add_client(cli);
+        pthread_create(&tid, NULL, &handle_client, (void*)cli);
 
         sleep(1); //reduce CPU usage
-  	}
+    }
 }
 
 void *handle_client(void *arg) //communicate with client
 {
-  	char buffer[256], response[1000], name[16], char_uid[4]="-1";
-  	int offline=0;
-  	Client *cli=(Client *)arg;
+    char buffer[256], response[1000], name[16], char_uid[4]="-1";
+    int offline=0;
+    Client *cli=(Client *)arg;
 
     recv(cli->fd, name, 16, 0); strcpy(cli->username, name); //get username
     recv(cli->fd, char_uid, 4, 0); cli->uid=atoi(char_uid); //get user id
 
-		sprintf(buffer, "%s is now online.\n", cli->username);
+    sprintf(buffer, "%s is now online.\n", cli->username);
     printf("[UID %d] %s", cli->uid, buffer); fflush(stdout);
-		send_message(cli->uid, buffer);
+    send_message(cli->uid, buffer);
 
-  	while(offline==0)
+    while(offline==0)
     {
         bzero(buffer, 256); bzero(response, 1000);
         int length=recv(cli->fd, buffer, 256, 0);
 
-    		if(length==-1)
+        if(length==-1)
         {
             perror("Error reading from client.\n");
             offline=1;
         }
         else if(length==0)
         {
-      			sprintf(buffer, "%s is now offline.\n", cli->username);
+            sprintf(buffer, "%s is now offline.\n", cli->username);
             printf("[UID %d] %s", cli->uid, buffer); fflush(stdout);
-      			send_message(cli->uid, buffer);
-      			offline=1;
-    		}
+            send_message(cli->uid, buffer);
+            offline=1;
+        }
         else
         {
             char aux[256]; strcpy(aux, buffer);
@@ -259,10 +259,10 @@ void *handle_client(void *arg) //communicate with client
                 perror("Error sending message.\n");
                 offline=1;
             }
-    		}
-  	}
+        }
+    }
 
-  	close(cli->fd); //done treating client
+    close(cli->fd); //done treating client
     remove_client(cli);
     free(cli);
     pthread_detach(pthread_self());
@@ -272,49 +272,49 @@ void *handle_client(void *arg) //communicate with client
 
 void add_client(Client *cl)
 {
-  	pthread_mutex_lock(&clients_mutex);
-  	for(int i=0;i<10;i++)
-    		if(clients[i]==NULL)
+    pthread_mutex_lock(&clients_mutex);
+    for(int i=0;i<10;i++)
+        if(clients[i]==NULL)
         {
-      			clients[i]=cl;
-      			break;
-    		}
-  	pthread_mutex_unlock(&clients_mutex);
+            clients[i]=cl;
+            break;
+        }
+    pthread_mutex_unlock(&clients_mutex);
 }
 
 void remove_client(Client *cl)
 {
-  	pthread_mutex_lock(&clients_mutex);
-  	for(int i=0;i<10;i++)
-    		if(clients[i]==cl)
+    pthread_mutex_lock(&clients_mutex);
+    for(int i=0;i<10;i++)
+        if(clients[i]==cl)
         {
-    				clients[i]=NULL;
-    				break;
-  			}
-  	pthread_mutex_unlock(&clients_mutex);
+            clients[i]=NULL;
+            break;
+        }
+    pthread_mutex_unlock(&clients_mutex);
 }
 
 void send_message(int uid, char message[240])
 {
-  	pthread_mutex_lock(&clients_mutex);
-  	for(int i=0;i<10;i++)
+    pthread_mutex_lock(&clients_mutex);
+    for(int i=0;i<10;i++)
         if(clients[i]!=NULL && clients[i]->uid!=uid)
-    				if(send(clients[i]->fd, message, strlen(message), 0)==-1)
+            if(send(clients[i]->fd, message, strlen(message), 0)==-1)
             {
-      					perror("Error writing to client.\n");
-      					break;
-    				}
-  	pthread_mutex_unlock(&clients_mutex);
+                perror("Error writing to client.\n");
+                break;
+            }
+    pthread_mutex_unlock(&clients_mutex);
 }
 
 void online_users(char response[1000])
 {
     pthread_mutex_lock(&clients_mutex);
-  	for(int i=0;i<10;i++)
+    for(int i=0;i<10;i++)
         if(clients[i]!=NULL)
-    		{
+        {
             strcat(response, clients[i]->username);
             strcat(response, "\n");
         }
-  	pthread_mutex_unlock(&clients_mutex);
+    pthread_mutex_unlock(&clients_mutex);
 }
