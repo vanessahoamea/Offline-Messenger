@@ -30,7 +30,11 @@ int main()
         else if(strcmp(command, "/register")==0) //making an account
         {
             int result=newuser(username, password);
-            if(result==-1)
+            if(result==-3)
+                printf("Username cannot be longer than 15 characters.\n");
+            else if(result==-2)
+                printf("Password cannot be longer than 25 characters.\n");
+            else if(result==-1)
                 printf("Username contains characters that are not allowed (spaces or '\\').\n");
             else if(result==0)
                 printf("User already exists.\n");
@@ -39,16 +43,11 @@ int main()
         }
         else if(strcmp(command, "/login")==0) //logging in
         {
-            if(uid>=0)
-                printf("You are already logged in. If you want to change accounts, log out then log in again.\n");
-            else
-            {
-                uid=login(username, password);
-                if(uid==-2)
-                    printf("User does not exist.\n");
-                else if(uid==-1)
-                    printf("Username or password is incorrect.\n");
-            }
+            uid=login(username, password);
+            if(uid==-2)
+                printf("User does not exist.\n");
+            else if(uid==-1)
+                printf("Username or password is incorrect.\n");
         }
     } while(uid<0);
 
@@ -74,61 +73,59 @@ int main()
     strcat(name, username); sprintf(char_uid, "%d", uid);
     int sendname=send(sd, name, 16, 0);
     int senduid=send(sd, char_uid, 4, 0);
-  	if(sendname==-1 || senduid==-1)
+    if(sendname==-1 || senduid==-1)
     {
         perror("Error writing to server.\n");
         return errno;
     }
 
-  	printf("Type '/help' for information on how to use.\n\n");
+    printf("Type '/help' for information on how to use.\n\n");
 
     if(pthread_create(&send_thread, NULL, (void *)send_data, NULL)!=0)
     {
-    	printf("Error creating thread.\n");
+        printf("Error creating thread.\n");
         return errno;
-  	}
+    }
 
     if(pthread_create(&recv_thread, NULL, (void *)recv_data, NULL)!=0)
     {
         printf("Error creating thread.\n");
         return errno;
-  	}
+    }
 
     while(1)
     {
         //program runs until user inputs "/quit"
     }
 
-  	close(sd);
+    close(sd);
 }
 
 void send_data()
 {
-    char message[240], buffer[260], path[30];
-
-    bzero(path, 30); strcat(path, "users/"); strcat(path, name); strcat(path, "_unread.txt");
+    char message[250], buffer[270];
 
     while(1)
     {
-        fgets(message, 240, stdin); message[strlen(message)-1]='\0';
+        fgets(message, 250, stdin); message[strlen(message)-1]='\0';
         if(strcmp(message, "/quit")==0)
         {
-			char path[40];
+            char path[40];
             bzero(path, 40); strcat(path, "users/"); strcat(path, name); strcat(path, "_unread.txt");
             FILE *unreadfile=fopen(path, "w"); //empty file when closing app
             fclose(unreadfile);
-			exit(0);
-		}
+            exit(0);
+        }
         else if(strncmp(message, "/register", 9)==0 || strncmp(message, "/login", 6)==0)
             printf("You are already logged in. If you want to create an account or log into a different one, you must first log out.\n");
         else
         {
-            if(strncmp(message, "/help", 5)==0 || strncmp(message, "/view", 5)==0 || strncmp(message, "/to ", 4)==0 ||
-            strncmp(message, "/reply ", 7)==0 || strncmp(message, "/history", 8)==0 ||
+            if(strncmp(message, "/help", 5)==0 || strncmp(message, "/view", 5)==0 || strncmp(message, "/to", 3)==0 ||
+            strncmp(message, "/reply", 6)==0 || strncmp(message, "/history", 8)==0 ||
             strncmp(message, "/chat-history", 13)==0 || strncmp(message, "/online-users", 13)==0) //commands
                 sprintf(buffer, "%s", message);
             else //message everyone
-                sprintf(buffer, "%s: %s\n", name, message);
+                sprintf(buffer, "%s %s: %s\n", current_time(), name, message);
 
             if(send(sd, buffer, strlen(buffer), 0)==-1)
             {
@@ -136,21 +133,21 @@ void send_data()
                 exit(0);
             }
         }
-    	bzero(message, 240); bzero(buffer, 260);
+        bzero(message, 250); bzero(buffer, 270);
     }
 }
 
 void recv_data()
 {
-  	char message[1000], path[30];
+    char buffer[1000], path[40];
 
-    bzero(path, 30); strcat(path, "users/"); strcat(path, name); strcat(path, "_unread.txt");
+    bzero(path, 40); strcat(path, "users/"); strcat(path, name); strcat(path, "_unread.txt");
     if(file_size(path)>0)
         printf("You have new messages. Type '/view' to read them.\n");
 
     while(1)
     {
-    	int length=recv(sd, message, 1000, 0);
+        int length=recv(sd, buffer, 1000, 0);
         if(length==-1)
         {
             perror("Error reading from server.\n");
@@ -160,8 +157,8 @@ void recv_data()
             break;
         else
         {
-            printf("%s", message); fflush(stdout);
+            printf("%s", buffer); fflush(stdout);
         }
-    	bzero(message, 1000);
+        bzero(buffer, 1000);
     }
 }

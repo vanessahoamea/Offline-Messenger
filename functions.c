@@ -51,7 +51,7 @@ char* get_username(int id)
 
 int file_size(char path[40])
 {
-    char line[260];
+    char line[320];
     int content=0;
 
     FILE *fptr=fopen(path, "a+");
@@ -60,17 +60,46 @@ int file_size(char path[40])
         perror("Error opening file.\n");
         return 0;
     }
-    while(fgets(line, 260, fptr))
+    while(fgets(line, 320, fptr))
         content++;
     fclose(fptr);
 
     return content;
 }
 
+char* current_time()
+{
+    time_t now;
+    static char timestamp[21];
+    struct tm *tm_info;
+
+    now=time(NULL);
+    tm_info=localtime(&now);
+
+    strftime(timestamp, 21, "[%d/%m/%Y @ %H:%M]", tm_info);
+    return timestamp;
+}
+
+void encrypt(char pass[26], int key)
+{
+    for(int i=0;i<strlen(pass);i++)
+        pass[i]=pass[i]+key+100;
+}
+
+void decrypt(char pass[26], int key)
+{
+    for(int i=0;i<strlen(pass);i++)
+        pass[i]=pass[i]-key-100;
+}
+
 int newuser(char user[16], char pass[26])
 {
     char line[50], new[50], path[40];
 
+    if(strlen(user)>15)
+        return -3;
+    if(strlen(pass)>25)
+        return -2;
     if(strchr(user, ' ')!=NULL || strchr(user, '\\')!=NULL)
         return -1;
 
@@ -90,7 +119,7 @@ int newuser(char user[16], char pass[26])
     bzero(new, 50);
     sprintf(new, "%d", file_size("users/users.txt")); strcat(new, " ");
     strcat(new, user); strcat(new, " ");
-    strcat(new, pass); strcat(new, "\n");
+    encrypt(pass, file_size("users/users.txt")); strcat(new, pass); strcat(new, "\n");
     fputs(new, fptr);
     fclose(fptr);
 
@@ -111,7 +140,7 @@ int login(char user[16], char pass[26])
     {
         char *uid=strtok(line, " ");
         char *username=strtok(NULL, " ");
-        char *password=strtok(NULL, "\n");
+        char *password=strtok(NULL, "\n"); decrypt(password, atoi(uid));
 
         if(strcmp(user, username)==0 && strcmp(pass, password)==0)
             return atoi(uid);
@@ -123,7 +152,7 @@ int login(char user[16], char pass[26])
     return -1;
 }
 
-int send_pm(char user[16], char text[236])
+int send_pm(char user[16], char text[320])
 {
     char line[50], path[40], char_mid[5];
     int mid, val=-1;
@@ -168,7 +197,7 @@ int send_pm(char user[16], char text[236])
 
 void view_unread(char user[16], char response[1000])
 {
-    char line[260], path[40];
+    char line[320], path[40];
 
     bzero(path, 40); strcat(path, "users/"); strcat(path, user); strcat(path, "_unread.txt");
 
@@ -182,15 +211,15 @@ void view_unread(char user[16], char response[1000])
         sprintf(response, "You don't have any unread messages.\n");
     else
     {
-        while(fgets(line, 260, unreadfile))
+        while(fgets(line, 320, unreadfile))
             strcat(response, line);
     }
     fclose(unreadfile);
 }
 
-int reply_msg(char user[16], int mid, char text[240], char response[1000])
+int reply_msg(char user[16], int mid, char text[231], char response[1000])
 {
-    char line[260], path[40], original[35];
+    char line[320], path[40], original[35], sender_aux[20];
     int recipient, count=0;
 
     bzero(path, 40); strcat(path, "users/"); strcat(path, user); strcat(path, "_unread.txt");
@@ -213,15 +242,16 @@ int reply_msg(char user[16], int mid, char text[240], char response[1000])
         perror("Error viewing unread messages.\n");
         return errno;
     }
-    while(fgets(line, 260, unreadfile))
+    while(fgets(line, 320, unreadfile))
     {
         char *nr=strtok(line, " ");
-        char *sender=strtok(NULL, ":");
+        char *time=strtok(NULL, "]");
+        char *sender=strtok(NULL, ":"); strcpy(sender_aux, sender+1);
         char *message=strtok(NULL, "\n");
 
         if(count==mid)
         {
-            recipient=get_uid(sender);
+            recipient=get_uid(sender_aux);
             strcat(original, message+1);
             break;
         }
@@ -229,6 +259,7 @@ int reply_msg(char user[16], int mid, char text[240], char response[1000])
     }
     fclose(unreadfile);
 
+    strcat(response, current_time()); strcat(response, " ");
     strcat(response, user); strcat(response, " replied to \"");
     if(strlen(original)<=30)
         strcat(response, original);
@@ -242,7 +273,7 @@ int reply_msg(char user[16], int mid, char text[240], char response[1000])
     return recipient;
 }
 
-void add_history(char path[30], char text[260])
+void add_history(char path[60], char text[320])
 {
     FILE *fptr=fopen(path, "a");
     if(fptr==NULL)
@@ -256,7 +287,7 @@ void add_history(char path[30], char text[260])
 
 int view_history(char user1[16], char user2[16], char response[1000])
 {
-    char line[260], path[60];
+    char line[320], path[60];
 
     bzero(path, 60);
     if(strcmp(user1, "\\")==0)
@@ -298,7 +329,7 @@ int view_history(char user1[16], char user2[16], char response[1000])
         sprintf(response, "No messages to show.\n");
     else
     {
-        while(fgets(line, 260, fptr))
+        while(fgets(line, 320, fptr))
             strcat(response, line);
     }
     fclose(fptr);

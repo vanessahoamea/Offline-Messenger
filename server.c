@@ -30,6 +30,8 @@ int main()
 
     setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
+    printf("Waiting for clients...\n\n");
+
     struct sockaddr_in server;
     server.sin_family=AF_INET;
     server.sin_addr.s_addr=inet_addr("127.0.0.1");
@@ -63,7 +65,7 @@ int main()
 
 void *handle_client(void *arg) //communicate with client
 {
-    char buffer[256], response[1000], name[16], char_uid[4]="-1";
+    char buffer[270], response[1000], name[16], char_uid[4]="-1";
     int offline=0;
     Client *cli=(Client *)arg;
 
@@ -76,8 +78,8 @@ void *handle_client(void *arg) //communicate with client
 
     while(offline==0)
     {
-        bzero(buffer, 256); bzero(response, 1000);
-        int length=recv(cli->fd, buffer, 256, 0);
+        bzero(buffer, 270); bzero(response, 1000);
+        int length=recv(cli->fd, buffer, 270, 0);
 
         if(length==-1)
         {
@@ -93,7 +95,7 @@ void *handle_client(void *arg) //communicate with client
         }
         else
         {
-            char aux[256]; strcpy(aux, buffer);
+            char aux[270]; strcpy(aux, buffer);
             char *command=strtok(aux, " ");
 
             if(strcmp(command, "/help")==0)
@@ -107,7 +109,7 @@ void *handle_client(void *arg) //communicate with client
                     sprintf(response, "- /help -- view details about how to use the app\n");
                     strcat(response, "- /register <username>/<password> -- create new account\n");
                     strcat(response, "- /login <username>/<password> -- log in to an account\n");
-                    strcat(response, "- <text> -- message all online users (maximum length of message is 236 characters)\n");
+                    strcat(response, "- <text> -- message all online users (maximum length of message is 230 characters)\n");
                     strcat(response, "- /to <username>: <text> -- send private message to <username>\n");
                     strcat(response, "- /reply <message id>: <text> -- reply to the message with the id <message id>\n");
                     strcat(response, "- /view -- view messages received while offline\n");
@@ -134,7 +136,7 @@ void *handle_client(void *arg) //communicate with client
 
                     if(is_online==0)
                     {
-                        sprintf(response, "%s:%s\n", cli->username, text);
+                        sprintf(response, "%s %s:%s\n", current_time(), cli->username, text);
                         int result=send_pm(username, response);
 
                         if(result==-1)

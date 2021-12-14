@@ -8,14 +8,18 @@
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
 
 int get_uid(char user[16]);
 char* get_username(int id);
 int file_size(char path[30]);
+char* current_time();
+void encrypt(char pass[26], int key);
+void decrypt(char pass[26], int key);
 int newuser(char user[16], char pass[26]);
 int login(char user[16], char pass[26]);
-int send_pm(char user[16], char text[236]);
+int send_pm(char user[16], char text[320]);
 void view_unread(char user[16], char response[1000]);
-int reply_msg(char user[16], int mid, char text[240], char response[1000]);
-void add_history(char path[30], char text[260]);
+int reply_msg(char user[16], int mid, char text[231], char response[1000]);
+void add_history(char path[60], char text[320]);
 int view_history(char user1[16], char user2[16], char response[1000]);
